@@ -1,0 +1,131 @@
+# EASY DIFFICULTY PRESET
+# Characteristics:
+# - Slow conveyor speed
+# - Few well-spaced packages
+# - Barcodes facing camera with large scale
+# - Excellent illumination, minimal noise, negligible motion blur
+# - Zero / minimal occlusion
+
+simulation:
+  seed: 42
+  duration_seconds: 10.0
+  fps: 30
+
+output:
+  output_dir: "outputs"
+  save_frames: true
+  save_video: true
+  save_annotations: true
+  save_coco: true
+  save_yolo: true
+  save_debug: true
+  video_codec: "h264"
+  video_crf: 18
+
+camera:
+  width: 1280
+  height: 720
+  zoom: 1.0
+  position_x: 0.5
+  position_y: 0.5
+
+conveyor:
+  direction: "left_to_right"
+  speed_min: 70.0
+  speed_max: 100.0
+  speed_distribution: "uniform"
+  acceleration: 0.0
+  jitter_stddev: 0.0
+  belt_color: [45, 45, 48]
+  lane_y_ratio: 0.5
+  lane_height_ratio: 0.7
+
+packages:
+  count: 8
+  spawn_interval_min: 1.2
+  spawn_interval_max: 2.0
+  size:
+    min_width: 260
+    max_width: 380
+    min_height: 180
+    max_height: 260
+  materials:
+    cardboard: 0.5
+    white_carton: 0.4
+    colored_carton: 0.1
+    poly_mailer: 0.0
+  add_shipping_labels: true
+  add_text_markings: true
+  tape_probability: 0.5
+
+barcodes:
+  types:
+    CODE128: 0.6
+    EAN13: 0.4
+    QRCODE: 0.0
+  human_readable_text: true
+  scale_min: 0.8
+  scale_max: 1.0
+  rotation_min: 0.0
+  rotation_max: 0.0
+  margin_padding: 8
+  allow_partial_clip: false
+
+effects:
+  rotation:
+    enabled: true
+    min_degrees: -5.0
+    max_degrees: 5.0
+  perspective:
+    enabled: false
+    strength_min: 0.0
+    strength_max: 0.02
+    tilt_x_max: 3.0
+    tilt_y_max: 3.0
+  motion_blur:
+    enabled: false
+    factor: 0.01
+    min_kernel: 1
+    max_kernel: 3
+  gaussian_blur:
+    enabled: false
+    min_sigma: 0.5
+    max_sigma: 1.0
+  brightness:
+    enabled: true
+    min_factor: 0.95
+    max_factor: 1.05
+  contrast:
+    enabled: true
+    min_factor: 0.95
+    max_factor: 1.05
+  gamma:
+    enabled: false
+    min_gamma: 0.95
+    max_gamma: 1.05
+  noise:
+    enabled: false
+    stddev_min: 0.0
+    stddev_max: 1.0
+  jpeg_compression:
+    enabled: false
+    min_quality: 90
+    max_quality: 98
+  glare:
+    enabled: false
+    probability: 0.05
+    intensity_min: 0.1
+    intensity_max: 0.3
+    radius_min: 20
+    radius_max: 50
+  shadows:
+    enabled: true
+    probability: 0.1
+    darkness_min: 0.1
+    darkness_max: 0.2
+  occlusion:
+    enabled: false
+    probability: 0.0
+    max_occlusion_ratio: 0.0
+
+renderer: "2d"

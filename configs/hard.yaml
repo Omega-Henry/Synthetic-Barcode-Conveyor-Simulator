@@ -1,0 +1,132 @@
+# HARD DIFFICULTY PRESET
+# Characteristics:
+# - High speed conveyor movement
+# - High package density with overlapping trajectories
+# - Strong 3D perspective tilts & large rotations
+# - Significant motion blur
+# - Adverse lighting, low contrast, glare spots, sensor noise, and JPEG compression
+# - Significant package occlusions
+
+simulation:
+  seed: 42
+  duration_seconds: 15.0
+  fps: 30
+
+output:
+  output_dir: "outputs"
+  save_frames: true
+  save_video: true
+  save_annotations: true
+  save_coco: true
+  save_yolo: true
+  save_debug: true
+  video_codec: "h264"
+  video_crf: 20
+
+camera:
+  width: 1280
+  height: 720
+  zoom: 1.0
+  position_x: 0.5
+  position_y: 0.5
+
+conveyor:
+  direction: "left_to_right"
+  speed_min: 220.0
+  speed_max: 340.0
+  speed_distribution: "uniform"
+  acceleration: 10.0
+  jitter_stddev: 2.5
+  belt_color: [40, 40, 43]
+  lane_y_ratio: 0.5
+  lane_height_ratio: 0.75
+
+packages:
+  count: 30
+  spawn_interval_min: 0.35
+  spawn_interval_max: 0.85
+  size:
+    min_width: 100
+    max_width: 220
+    min_height: 80
+    max_height: 170
+  materials:
+    cardboard: 0.40
+    white_carton: 0.20
+    colored_carton: 0.20
+    poly_mailer: 0.20
+  add_shipping_labels: true
+  add_text_markings: true
+  tape_probability: 0.8
+
+barcodes:
+  types:
+    CODE128: 0.50
+    EAN13: 0.35
+    QRCODE: 0.15
+  human_readable_text: true
+  scale_min: 0.35
+  scale_max: 0.75
+  rotation_min: -35.0
+  rotation_max: 35.0
+  margin_padding: 4
+  allow_partial_clip: true
+
+effects:
+  rotation:
+    enabled: true
+    min_degrees: -35.0
+    max_degrees: 35.0
+  perspective:
+    enabled: true
+    strength_min: 0.08
+    strength_max: 0.25
+    tilt_x_max: 18.0
+    tilt_y_max: 18.0
+  motion_blur:
+    enabled: true
+    factor: 0.06
+    min_kernel: 3
+    max_kernel: 17
+  gaussian_blur:
+    enabled: true
+    min_sigma: 0.5
+    max_sigma: 2.0
+  brightness:
+    enabled: true
+    min_factor: 0.65
+    max_factor: 1.35
+  contrast:
+    enabled: true
+    min_factor: 0.70
+    max_factor: 1.30
+  gamma:
+    enabled: true
+    min_gamma: 0.75
+    max_gamma: 1.35
+  noise:
+    enabled: true
+    stddev_min: 3.0
+    stddev_max: 9.0
+  jpeg_compression:
+    enabled: true
+    min_quality: 45
+    max_quality: 75
+  glare:
+    enabled: true
+    probability: 0.35
+    intensity_min: 0.3
+    intensity_max: 0.8
+    radius_min: 40
+    radius_max: 140
+  shadows:
+    enabled: true
+    probability: 0.40
+    darkness_min: 0.3
+    darkness_max: 0.6
+  occlusion:
+    enabled: true
+    probability: 0.30
+    max_occlusion_ratio: 0.65
+
+renderer: "2d"

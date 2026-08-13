@@ -161,10 +161,10 @@ class BarcodeGenerator:
             code128_class = barcode.get_barcode_class("code128")
             writer = ImageWriter()
             writer.set_options({
-                "module_width": 0.4,
-                "module_height": 16.0,
-                "quiet_zone": max(2.5, quiet_zone / 4.0),
-                "font_size": 10 if human_readable_text else 0,
+                "module_width": 0.6,
+                "module_height": 22.0,
+                "quiet_zone": max(4.0, float(quiet_zone)),
+                "font_size": 11 if human_readable_text else 0,
                 "text_distance": 4.0,
                 "write_text": human_readable_text,
             })
@@ -186,10 +186,10 @@ class BarcodeGenerator:
             ean_class = barcode.get_barcode_class("ean13")
             writer = ImageWriter()
             writer.set_options({
-                "module_width": 0.4,
-                "module_height": 16.0,
-                "quiet_zone": max(2.5, quiet_zone / 4.0),
-                "font_size": 10 if human_readable_text else 0,
+                "module_width": 0.6,
+                "module_height": 22.0,
+                "quiet_zone": max(4.0, float(quiet_zone)),
+                "font_size": 11 if human_readable_text else 0,
                 "text_distance": 4.0,
                 "write_text": human_readable_text,
             })
@@ -210,9 +210,9 @@ class BarcodeGenerator:
 
             qr = qrcode.QRCode(
                 version=None,
-                error_correction=qrcode.constants.ERROR_CORRECT_M,
-                box_size=6,
-                border=max(2, quiet_zone // 3),
+                error_correction=qrcode.constants.ERROR_CORRECT_H,  # High error correction
+                box_size=10,  # High resolution modules
+                border=max(4, quiet_zone // 2),
             )
             qr.add_data(value)
             qr.make(fit=True)
@@ -220,11 +220,11 @@ class BarcodeGenerator:
             return img
         except Exception:
             # Fallback mock QR
-            w, h = 180, 180
+            w, h = 240, 240
             img = Image.new("RGB", (w, h), color=(255, 255, 255))
             draw = ImageDraw.Draw(img)
             draw.rectangle([10, 10, w - 10, h - 10], outline="black", width=4)
-            draw.text((20, 80), "QR ERROR", fill="black")
+            draw.text((20, 110), "QR ERROR", fill="black")
             return img
 
     def _render_fallback_1d_barcode(self, value: str, human_readable_text: bool, quiet_zone: int) -> Image.Image:

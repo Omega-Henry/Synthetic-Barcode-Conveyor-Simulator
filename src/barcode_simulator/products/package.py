@@ -94,12 +94,18 @@ class Package:
             bc_orig_w, bc_orig_h = bc_img.size
             aspect = bc_orig_w / max(1, bc_orig_h)
 
-            # Available maximum width and height on package face
-            max_avail_w = w_px * 0.85
-            max_avail_h = h_px * 0.85
-
-            target_w = max(30.0, min(max_avail_w, max_avail_h * aspect) * self.data.barcode_rel_scale)
-            target_h = max(20.0, target_w / aspect)
+            if aspect >= 1.3:
+                # 1D Barcode (wide rectangular)
+                max_avail_w = w_px * 0.88
+                max_avail_h = h_px * 0.70
+                target_w = max(70.0, min(max_avail_w, max_avail_h * aspect) * self.data.barcode_rel_scale)
+                target_h = max(30.0, target_w / aspect)
+            else:
+                # 2D Matrix / QR Code (square)
+                min_dim = min(w_px, h_px)
+                target_size = max(90.0, min_dim * 0.72 * max(0.85, self.data.barcode_rel_scale))
+                target_w = target_size
+                target_h = target_size
 
             # Resize barcode with high-quality resampling
             bc_resized = bc_img.resize((int(round(target_w)), int(round(target_h))), Image.Resampling.LANCZOS)

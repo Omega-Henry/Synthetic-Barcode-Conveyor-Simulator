@@ -220,7 +220,7 @@ class OpenCV2DRenderer(Renderer):
             tex_rgba,
             h_matrix,
             (canvas.shape[1], canvas.shape[0]),
-            flags=cv2.INTER_LINEAR,
+            flags=cv2.INTER_LANCZOS4,
             borderMode=cv2.BORDER_CONSTANT,
             borderValue=(0, 0, 0, 0),
         )

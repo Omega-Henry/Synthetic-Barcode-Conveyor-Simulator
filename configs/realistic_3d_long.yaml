@@ -1,12 +1,12 @@
-# REALISTIC 3D CONVEYOR WITH LONG GENERATION STREAM
-# - 3D volumetric cuboid rendering with top, front, and side faces
+# REALISTIC 3D CONVEYOR WITH LONG GENERATION STREAM (CRISP & SHARP)
+# - High-clarity 3D volumetric cuboid rendering with top, front, and side faces
+# - Large, high-contrast QR codes and 1D barcodes for effortless readability & detection
 # - 3D metallic conveyor rollers, side rails with hazard stripes
-# - High frame count (1200+ frames) for comprehensive computer vision dataset capture
-# - Diverse package stream with Code 128, EAN-13, and QR codes
+# - Visually lossless H.264 encoding with razor-sharp edges
 
 simulation:
   seed: 100
-  duration_seconds: 40.0
+  duration_seconds: 20.0
   fps: 30
 
 output:
@@ -18,7 +18,7 @@ output:
   save_yolo: true
   save_debug: true
   video_codec: "h264"
-  video_crf: 18
+  video_crf: 14
 
 camera:
   width: 1280
@@ -31,103 +31,103 @@ camera:
 
 conveyor:
   direction: "left_to_right"
-  speed_min: 120.0
-  speed_max: 180.0
+  speed_min: 100.0
+  speed_max: 150.0
   speed_distribution: "uniform"
   acceleration: 0.0
-  jitter_stddev: 0.6
+  jitter_stddev: 0.2
   belt_color: [42, 42, 45]
   lane_y_ratio: 0.5
   lane_height_ratio: 0.68
 
 packages:
-  count: 35
-  spawn_interval_min: 0.8
+  count: 20
+  spawn_interval_min: 0.9
   spawn_interval_max: 1.6
   size:
-    min_width: 160
-    max_width: 290
-    min_height: 110
-    max_height: 200
+    min_width: 200
+    max_width: 320
+    min_height: 140
+    max_height: 230
   height_3d_ratio_min: 0.35
-  height_3d_ratio_max: 0.70
+  height_3d_ratio_max: 0.65
   materials:
     cardboard: 0.45
-    white_carton: 0.25
-    colored_carton: 0.20
+    white_carton: 0.30
+    colored_carton: 0.15
     poly_mailer: 0.10
   add_shipping_labels: true
   add_text_markings: true
-  tape_probability: 0.75
+  tape_probability: 0.70
 
 barcodes:
   types:
-    CODE128: 0.50
-    EAN13: 0.35
-    QRCODE: 0.15
+    CODE128: 0.40
+    EAN13: 0.30
+    QRCODE: 0.30
   human_readable_text: true
-  scale_min: 0.60
-  scale_max: 0.90
-  rotation_min: -15.0
-  rotation_max: 15.0
-  margin_padding: 6
+  scale_min: 0.85
+  scale_max: 1.10
+  rotation_min: -8.0
+  rotation_max: 8.0
+  margin_padding: 8
   allow_partial_clip: false
 
 effects:
   rotation:
     enabled: true
-    min_degrees: -15.0
-    max_degrees: 15.0
+    min_degrees: -10.0
+    max_degrees: 10.0
   perspective:
     enabled: true
-    strength_min: 0.02
-    strength_max: 0.12
-    tilt_x_max: 10.0
-    tilt_y_max: 10.0
+    strength_min: 0.01
+    strength_max: 0.06
+    tilt_x_max: 6.0
+    tilt_y_max: 6.0
   motion_blur:
-    enabled: true
-    factor: 0.035
+    enabled: false
+    factor: 0.005
     min_kernel: 1
-    max_kernel: 8
+    max_kernel: 2
   gaussian_blur:
     enabled: false
     min_sigma: 0.5
-    max_sigma: 1.2
+    max_sigma: 1.0
   brightness:
     enabled: true
-    min_factor: 0.88
-    max_factor: 1.12
+    min_factor: 0.95
+    max_factor: 1.05
   contrast:
     enabled: true
-    min_factor: 0.88
-    max_factor: 1.12
+    min_factor: 0.95
+    max_factor: 1.05
   gamma:
     enabled: false
-    min_gamma: 0.90
-    max_gamma: 1.10
+    min_gamma: 0.95
+    max_gamma: 1.05
   noise:
-    enabled: true
-    stddev_min: 1.0
-    stddev_max: 3.5
+    enabled: false
+    stddev_min: 0.0
+    stddev_max: 0.0
   jpeg_compression:
     enabled: false
-    min_quality: 75
-    max_quality: 95
+    min_quality: 90
+    max_quality: 98
   glare:
-    enabled: true
-    probability: 0.18
-    intensity_min: 0.2
-    intensity_max: 0.55
-    radius_min: 30
-    radius_max: 80
+    enabled: false
+    probability: 0.0
+    intensity_min: 0.1
+    intensity_max: 0.3
+    radius_min: 20
+    radius_max: 50
   shadows:
     enabled: true
-    probability: 0.25
-    darkness_min: 0.2
-    darkness_max: 0.4
+    probability: 0.20
+    darkness_min: 0.15
+    darkness_max: 0.30
   occlusion:
     enabled: true
-    probability: 0.15
-    max_occlusion_ratio: 0.35
+    probability: 0.10
+    max_occlusion_ratio: 0.25
 
 renderer: "2d"

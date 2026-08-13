@@ -31,5 +31,7 @@ class VirtualCamera:
             height=self.height,
             zoom=self.zoom,
             center=self.center,
+            elevation_angle_deg=self.settings.elevation_angle_deg,
+            enable_3d_cuboid=self.settings.enable_3d_cuboid,
             exposure=self.exposure,
         )

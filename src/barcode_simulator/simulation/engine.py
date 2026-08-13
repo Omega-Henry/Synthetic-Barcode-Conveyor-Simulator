@@ -129,7 +129,7 @@ class SimulationEngine:
             )
             self.package_trajectories[pkg.id] = traj
 
-            # 3. Geometric domain randomization
+            # 3. Geometric domain randomization & 3D Dimensions
             rot_deg = 0.0
             if self.config.effects.rotation.enabled:
                 rot_deg = pkg_rng.uniform(
@@ -147,6 +147,13 @@ class SimulationEngine:
                 tilt_x = strength * self.config.effects.perspective.tilt_x_max * pkg_rng.choice([-1.0, 1.0])
                 tilt_y = strength * self.config.effects.perspective.tilt_y_max * pkg_rng.choice([-1.0, 1.0])
 
+            # 3D Box height
+            h_ratio = pkg_rng.uniform(
+                self.config.packages.height_3d_ratio_min,
+                self.config.packages.height_3d_ratio_max,
+            )
+            box_height_3d = float(pkg.width * h_ratio)
+
             # Motion blur kernel factor
             mb_kernel = 1
             if self.config.effects.motion_blur.enabled:
@@ -162,6 +169,7 @@ class SimulationEngine:
                 "rotation_deg": rot_deg,
                 "tilt_x_deg": tilt_x,
                 "tilt_y_deg": tilt_y,
+                "box_height_3d": box_height_3d,
                 "motion_blur_kernel": mb_kernel,
                 "z_index": i,  # Later spawned packages can overlap earlier ones
             }
@@ -197,18 +205,35 @@ class SimulationEngine:
             pos = traj.get_position(time_seconds)
             vel = traj.get_velocity(time_seconds)
 
-            # Compute package quadrilateral with perspective and rotation
-            pkg_poly = create_perspective_quad(
-                center_x=pos.x,
-                center_y=pos.y,
-                width=pkg.width,
-                height=pkg.height,
-                rotation_deg=eff["rotation_deg"],
-                tilt_x_deg=eff["tilt_x_deg"],
-                tilt_y_deg=eff["tilt_y_deg"],
-            )
+            # Compute 3D cuboid projection or 2D perspective quad
+            if self.config.camera.enable_3d_cuboid:
+                from barcode_simulator.utils.geometry import create_3d_cuboid_quads
+                pkg_poly, front_poly, side_poly, base_poly = create_3d_cuboid_quads(
+                    center_x=pos.x,
+                    center_y=pos.y,
+                    width=pkg.width,
+                    depth=pkg.height,
+                    height_3d=eff["box_height_3d"],
+                    rotation_deg=eff["rotation_deg"],
+                    elevation_angle_deg=self.config.camera.elevation_angle_deg,
+                    tilt_x_deg=eff["tilt_x_deg"],
+                    tilt_y_deg=eff["tilt_y_deg"],
+                )
+            else:
+                pkg_poly = create_perspective_quad(
+                    center_x=pos.x,
+                    center_y=pos.y,
+                    width=pkg.width,
+                    height=pkg.height,
+                    rotation_deg=eff["rotation_deg"],
+                    tilt_x_deg=eff["tilt_x_deg"],
+                    tilt_y_deg=eff["tilt_y_deg"],
+                )
+                front_poly = None
+                side_poly = None
+                base_poly = None
 
-            # Compute Homography from package face to screen polygon
+            # Compute Homography from package face to screen polygon (top face)
             tex_w, tex_h = float(pkg.width), float(pkg.height)
             src_corners = np.array([
                 [0.0, 0.0],
@@ -237,6 +262,10 @@ class SimulationEngine:
                 package_polygon=pkg_poly,
                 barcode_polygon=bc_poly_screen,
                 barcode_bounding_box=bc_bbox_screen,
+                front_face_polygon=front_poly,
+                side_face_polygon=side_poly,
+                base_polygon=base_poly,
+                box_height_3d=eff["box_height_3d"],
                 z_index=eff["z_index"],
                 rotation_deg=eff["rotation_deg"],
                 tilt_x_deg=eff["tilt_x_deg"],

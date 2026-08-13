@@ -27,6 +27,8 @@ class CameraState:
     height: int
     zoom: float = 1.0
     center: Point2D = field(default_factory=lambda: Point2D(640.0, 360.0))
+    elevation_angle_deg: float = 65.0
+    enable_3d_cuboid: bool = True
     exposure: float = 0.0
 
 
@@ -36,9 +38,13 @@ class ActivePackageInstance:
     trajectory: Trajectory
     current_position: Point2D
     current_velocity_px_s: float
-    package_polygon: Polygon2D
+    package_polygon: Polygon2D  # Top face
     barcode_polygon: Polygon2D
     barcode_bounding_box: BoundingBox
+    front_face_polygon: Optional[Polygon2D] = None
+    side_face_polygon: Optional[Polygon2D] = None
+    base_polygon: Optional[Polygon2D] = None
+    box_height_3d: float = 0.0
     z_index: int = 0
     layer_occluded: bool = False
     rotation_deg: float = 0.0

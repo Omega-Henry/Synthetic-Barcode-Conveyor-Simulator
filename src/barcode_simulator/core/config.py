@@ -44,6 +44,8 @@ class CameraSettings(BaseModel):
     zoom: float = Field(default=1.0, ge=0.1, le=10.0, description="Camera zoom factor.")
     position_x: float = Field(default=0.5, description="Normalized camera center X [0.0 - 1.0].")
     position_y: float = Field(default=0.5, description="Normalized camera center Y [0.0 - 1.0].")
+    elevation_angle_deg: float = Field(default=65.0, ge=10.0, le=90.0, description="Camera viewing elevation angle (90=top-down, 60=angled 3D perspective).")
+    enable_3d_cuboid: bool = Field(default=True, description="Render full 3D volumetric cuboid with top, front, and side faces.")
     exposure_compensation: float = Field(default=0.0, description="Exposure bias (-2.0 to 2.0).")
 
 
@@ -75,6 +77,8 @@ class PackageSettings(BaseModel):
     spawn_interval_min: float = Field(default=0.6, ge=0.05, description="Min seconds between package spawns.")
     spawn_interval_max: float = Field(default=1.8, ge=0.05, description="Max seconds between package spawns.")
     size: PackageSizeSettings = Field(default_factory=PackageSizeSettings)
+    height_3d_ratio_min: float = Field(default=0.35, ge=0.05, le=2.0, description="Box vertical 3D height ratio relative to base width.")
+    height_3d_ratio_max: float = Field(default=0.75, ge=0.05, le=2.0, description="Box vertical 3D height ratio relative to base width.")
     materials: Dict[str, float] = Field(
         default_factory=lambda: {
             "cardboard": 0.50,

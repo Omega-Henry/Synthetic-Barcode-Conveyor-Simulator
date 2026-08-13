@@ -142,6 +142,86 @@ def create_perspective_quad(
     return Polygon2D([Point2D(float(p[0]), float(p[1])) for p in final_pts])
 
 
+def create_3d_cuboid_quads(
+    center_x: float,
+    center_y: float,
+    width: float,
+    depth: float,
+    height_3d: float,
+    rotation_deg: float = 0.0,
+    elevation_angle_deg: float = 65.0,
+    tilt_x_deg: float = 0.0,
+    tilt_y_deg: float = 0.0,
+) -> Tuple[Polygon2D, Optional[Polygon2D], Optional[Polygon2D], Polygon2D]:
+    """
+    Construct 3D projected quadrilateral polygons for a cuboid package:
+    Returns (top_face_polygon, front_face_polygon, side_face_polygon, base_polygon).
+    """
+    hw = width / 2.0
+    hd = depth / 2.0
+
+    # 4 Base corners on the conveyor plane [top-left, top-right, bottom-right, bottom-left]
+    base_corners = np.array([
+        [-hw, -hd],
+        [hw, -hd],
+        [hw, hd],
+        [-hw, hd]
+    ], dtype=np.float64)
+
+    # Rotation on conveyor plane
+    rad_rot = math.radians(rotation_deg)
+    cos_r, sin_r = math.cos(rad_rot), math.sin(rad_rot)
+    rot_matrix = np.array([[cos_r, -sin_r], [sin_r, cos_r]], dtype=np.float64)
+    rotated_base = base_corners @ rot_matrix.T
+
+    # 3D Tilt perspective simulation
+    rad_x = math.radians(tilt_x_deg)
+    rad_y = math.radians(tilt_y_deg)
+    factor_x = math.sin(rad_y) * 0.3
+    factor_y = math.sin(rad_x) * 0.3
+
+    rotated_base[0, 1] *= (1.0 + factor_x)
+    rotated_base[3, 1] *= (1.0 + factor_x)
+    rotated_base[1, 1] *= (1.0 - factor_x)
+    rotated_base[2, 1] *= (1.0 - factor_x)
+    rotated_base[0, 0] *= (1.0 + factor_y)
+    rotated_base[1, 0] *= (1.0 + factor_y)
+    rotated_base[3, 0] *= (1.0 - factor_y)
+    rotated_base[2, 0] *= (1.0 - factor_y)
+
+    # Base coordinates in screen space
+    base_pts = rotated_base + np.array([center_x, center_y], dtype=np.float64)
+
+    # Elevation vector for 3D height: camera at angle alpha projects vertical Z upwards (negative Y)
+    elev_rad = math.radians(elevation_angle_deg)
+    dy_elev = -height_3d * math.cos(elev_rad)
+    dx_elev = height_3d * math.sin(math.radians(tilt_y_deg)) * 0.2
+
+    # Top vertices are projected elevated relative to base vertices
+    top_pts = base_pts + np.array([dx_elev, dy_elev], dtype=np.float64)
+
+    top_poly = Polygon2D([Point2D(float(p[0]), float(p[1])) for p in top_pts])
+    base_poly = Polygon2D([Point2D(float(p[0]), float(p[1])) for p in base_pts])
+
+    # Front Face: [base[3], base[2], top[2], top[3]]
+    front_pts = [base_pts[3], base_pts[2], top_pts[2], top_pts[3]]
+    front_poly = Polygon2D([Point2D(float(p[0]), float(p[1])) for p in front_pts])
+
+    # Side Face (visible left or right depending on rotation):
+    # Determine if left side (0->3) or right side (1->2) is facing camera
+    side_poly: Optional[Polygon2D] = None
+    if rotation_deg < -0.5:
+        # Right side visible: [base[2], base[1], top[1], top[2]]
+        side_pts = [base_pts[2], base_pts[1], top_pts[1], top_pts[2]]
+        side_poly = Polygon2D([Point2D(float(p[0]), float(p[1])) for p in side_pts])
+    elif rotation_deg > 0.5:
+        # Left side visible: [base[0], base[3], top[3], top[0]]
+        side_pts = [base_pts[0], base_pts[3], top_pts[3], top_pts[0]]
+        side_poly = Polygon2D([Point2D(float(p[0]), float(p[1])) for p in side_pts])
+
+    return top_poly, front_poly, side_poly, base_poly
+
+
 def sutherland_hodgman_clip(subject_polygon: List[Point2D], clip_polygon: List[Point2D]) -> List[Point2D]:
     """
     Sutherland-Hodgman polygon clipping algorithm.

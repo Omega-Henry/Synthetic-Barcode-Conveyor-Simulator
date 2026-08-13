@@ -82,17 +82,16 @@ class OpenCV2DRenderer(Renderer):
         return frame
 
     def _render_conveyor_background(self, scene: SceneDescription, w: int, h: int) -> np.ndarray:
-        """Render factory environment and conveyor belt with moving texture stripes."""
+        """Render industrial factory environment and conveyor belt with 3D metallic rollers."""
         bg = np.zeros((h, w, 3), dtype=np.uint8)
 
-        # Factory floor background (industrial concrete gray)
-        bg[:, :] = (85, 88, 92)
-        # Floor tile grid lines
-        grid_step = 80
+        # Factory concrete floor with fine noise
+        bg[:, :] = (78, 82, 86)
+        grid_step = 90
         for gx in range(0, w, grid_step):
-            cv2.line(bg, (gx, 0), (gx, h), (75, 78, 82), 1)
+            cv2.line(bg, (gx, 0), (gx, h), (70, 74, 78), 1)
         for gy in range(0, h, grid_step):
-            cv2.line(bg, (0, gy), (w, gy), (75, 78, 82), 1)
+            cv2.line(bg, (0, gy), (w, gy), (70, 74, 78), 1)
 
         # Conveyor belt region
         lane_y = int(round(scene.conveyor.lane_y))
@@ -100,25 +99,46 @@ class OpenCV2DRenderer(Renderer):
         top_y = max(0, lane_y - lane_h // 2)
         bot_y = min(h, lane_y + lane_h // 2)
 
-        # Steel conveyor side rails
-        rail_h = 16
-        # Top rail
-        bg[max(0, top_y - rail_h):top_y, :] = (140, 145, 150)
-        cv2.line(bg, (0, top_y), (w, top_y), (60, 60, 65), 2)
-        # Bottom rail
-        bg[bot_y:min(h, bot_y + rail_h), :] = (140, 145, 150)
-        cv2.line(bg, (0, bot_y), (w, bot_y), (60, 60, 65), 2)
+        # 3D Conveyor frame shadow onto floor
+        shadow_rail = 12
+        bg[max(0, top_y - shadow_rail - 16):max(0, top_y - 16), :] = (55, 58, 62)
+        bg[min(h, bot_y + 16):min(h, bot_y + shadow_rail + 16), :] = (55, 58, 62)
 
-        # Conveyor belt surface
+        # Steel conveyor side rails with 3D chamfer
+        rail_h = 18
+        # Top rail (Metallic steel gradient)
+        bg[max(0, top_y - rail_h):top_y, :] = (135, 140, 145)
+        cv2.line(bg, (0, top_y - rail_h), (w, top_y - rail_h), (180, 185, 190), 2)  # Top highlight
+        cv2.line(bg, (0, top_y), (w, top_y), (60, 62, 65), 2)  # Bottom shadow
+
+        # Bottom rail
+        bg[bot_y:min(h, bot_y + rail_h), :] = (135, 140, 145)
+        cv2.line(bg, (0, bot_y), (w, bot_y), (180, 185, 190), 2)
+        cv2.line(bg, (0, min(h - 1, bot_y + rail_h)), (w, min(h - 1, bot_y + rail_h)), (60, 62, 65), 2)
+
+        # Conveyor belt surface (matte industrial rubber/composite)
         belt_color = scene.conveyor.belt_color
         bg[top_y:bot_y, :] = belt_color
 
-        # Conveyor moving texture markings (e.g. segmented rubber slats or roller lines)
-        offset_x = int(round(scene.conveyor.current_offset_x)) % 60
-        for sx in range(-60, w + 60, 60):
-            line_x = sx + offset_x
-            if 0 <= line_x < w:
-                cv2.line(bg, (line_x, top_y), (line_x, bot_y), (30, 30, 32), 2)
+        # 3D Moving Metallic Rollers / Slats
+        roller_spacing = 50
+        offset_x = int(round(scene.conveyor.current_offset_x)) % roller_spacing
+        for sx in range(-roller_spacing, w + roller_spacing, roller_spacing):
+            rx = sx + offset_x
+            if -10 <= rx < w + 10:
+                # Cylindrical roller shading (dark-bright-dark gradient)
+                cv2.line(bg, (rx - 2, top_y), (rx - 2, bot_y), (25, 25, 28), 1)
+                cv2.line(bg, (rx - 1, top_y), (rx - 1, bot_y), (65, 68, 72), 1)  # Specular highlight
+                cv2.line(bg, (rx, top_y), (rx, bot_y), (50, 52, 55), 1)
+                cv2.line(bg, (rx + 1, top_y), (rx + 1, bot_y), (20, 20, 22), 1)
+
+        # Yellow safety hazard stripes on side rail edges
+        stripe_step = 40
+        for sx in range(0, w, stripe_step):
+            pts_top = np.array([[sx, top_y - rail_h], [sx + 15, top_y - rail_h], [sx + 5, top_y], [sx - 10, top_y]])
+            cv2.fillConvexPoly(bg, pts_top, (210, 180, 40))
+            pts_bot = np.array([[sx, bot_y], [sx + 15, bot_y], [sx + 5, bot_y + rail_h], [sx - 10, bot_y + rail_h]])
+            cv2.fillConvexPoly(bg, pts_bot, (210, 180, 40))
 
         return bg
 
@@ -155,10 +175,11 @@ class OpenCV2DRenderer(Renderer):
         # Compute Homography Matrix
         h_matrix = cv2.getPerspectiveTransform(src_corners, dst_corners)
 
-        # 1. Package Drop Shadow (ROI optimized)
-        shadow_offset_x = 10.0
-        shadow_offset_y = 12.0
-        shadow_pts = (dst_corners + np.array([shadow_offset_x, shadow_offset_y], dtype=np.float32))
+        # 1. Package 3D Drop Shadow (cast from box base onto conveyor)
+        shadow_base = pkg_inst.base_polygon.to_numpy() if pkg_inst.base_polygon else dst_corners
+        shadow_offset_x = 8.0
+        shadow_offset_y = 10.0
+        shadow_pts = (shadow_base + np.array([shadow_offset_x, shadow_offset_y], dtype=np.float32))
         s_xmin = max(0, int(np.min(shadow_pts[:, 0])) - 20)
         s_ymin = max(0, int(np.min(shadow_pts[:, 1])) - 20)
         s_xmax = min(canvas.shape[1], int(np.max(shadow_pts[:, 0])) + 20)
@@ -170,13 +191,30 @@ class OpenCV2DRenderer(Renderer):
             local_shadow_pts = (shadow_pts - np.array([s_xmin, s_ymin], dtype=np.float32)).astype(np.int32)
             shadow_mask = np.zeros((roi_h, roi_w), dtype=np.uint8)
             cv2.fillConvexPoly(shadow_mask, local_shadow_pts, 255)
-            shadow_mask = cv2.GaussianBlur(shadow_mask, (21, 21), 9)
+            shadow_mask = cv2.GaussianBlur(shadow_mask, (25, 25), 11)
 
-            alpha_shadow = (shadow_mask.astype(np.float32) / 255.0)[:, :, np.newaxis] * 0.4
+            alpha_shadow = (shadow_mask.astype(np.float32) / 255.0)[:, :, np.newaxis] * 0.45
             canvas_roi = canvas[s_ymin:s_ymax, s_xmin:s_xmax].astype(np.float32)
             canvas[s_ymin:s_ymax, s_xmin:s_xmax] = np.clip(canvas_roi * (1.0 - alpha_shadow), 0, 255).astype(np.uint8)
 
-        # 2. Warp package texture
+        # 2. Render 3D Side Face (if visible)
+        base_color = np.array(pkg_data.color, dtype=np.float32)
+        if pkg_inst.side_face_polygon and len(pkg_inst.side_face_polygon.vertices) >= 4:
+            side_pts = pkg_inst.side_face_polygon.to_numpy().astype(np.int32)
+            side_color = tuple(int(c * 0.58) for c in pkg_data.color)
+            cv2.fillConvexPoly(canvas, side_pts, side_color)
+            # Side crease / bevel outline
+            cv2.polylines(canvas, [side_pts], isClosed=True, color=tuple(max(0, int(c * 0.4)) for c in pkg_data.color), thickness=1)
+
+        # 3. Render 3D Front Face (if visible)
+        if pkg_inst.front_face_polygon and len(pkg_inst.front_face_polygon.vertices) >= 4:
+            front_pts = pkg_inst.front_face_polygon.to_numpy().astype(np.int32)
+            front_color = tuple(int(c * 0.74) for c in pkg_data.color)
+            cv2.fillConvexPoly(canvas, front_pts, front_color)
+            # Front crease / bevel outline
+            cv2.polylines(canvas, [front_pts], isClosed=True, color=tuple(max(0, int(c * 0.5)) for c in pkg_data.color), thickness=1)
+
+        # 4. Warp package Top Face texture
         tex_rgba = np.dstack([tex, np.full((tex_h, tex_w), 255, dtype=np.uint8)])
         warped_rgba = cv2.warpPerspective(
             tex_rgba,
@@ -190,7 +228,7 @@ class OpenCV2DRenderer(Renderer):
         warped_rgb = warped_rgba[:, :, :3]
         warped_alpha = warped_rgba[:, :, 3]
 
-        # 3. Apply package-specific Motion Blur if active
+        # 5. Apply package-specific Motion Blur if active
         if pkg_inst.motion_blur_kernel > 1:
             warped_rgb, _ = apply_motion_blur(
                 warped_rgb,
@@ -201,7 +239,7 @@ class OpenCV2DRenderer(Renderer):
                 angle_rad=0.0 if scene.conveyor.direction == "left_to_right" else math.pi,
             )
 
-        # 4. Alpha blend warped package onto canvas (ROI bounded)
+        # 6. Alpha blend warped Top Face onto canvas
         p_xmin = max(0, int(np.min(dst_corners[:, 0])) - 10)
         p_ymin = max(0, int(np.min(dst_corners[:, 1])) - 10)
         p_xmax = min(canvas.shape[1], int(np.max(dst_corners[:, 0])) + 10)
@@ -212,6 +250,10 @@ class OpenCV2DRenderer(Renderer):
             canvas_roi = canvas[p_ymin:p_ymax, p_xmin:p_xmax].astype(np.float32)
             pkg_roi = warped_rgb[p_ymin:p_ymax, p_xmin:p_xmax].astype(np.float32)
             canvas[p_ymin:p_ymax, p_xmin:p_xmax] = np.clip(canvas_roi * (1.0 - mask_roi) + pkg_roi * mask_roi, 0, 255).astype(np.uint8)
+
+        # Draw crisp 3D top perimeter outline
+        top_pts_int = dst_corners.astype(np.int32)
+        cv2.polylines(canvas, [top_pts_int], isClosed=True, color=(30, 30, 32), thickness=1)
 
         return canvas
 
